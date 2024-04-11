@@ -5,8 +5,8 @@
 #include <vector>
 #include <iomanip>
 #include <utility>
-
-static const int EXIT_OPTION = 4;
+#include <algorithm> 
+static const int EXIT_OPTION = 5;
 static const std::string CUSTOMER_FILE = "customers.txt";
 
 class Customer {
@@ -24,21 +24,26 @@ public:
     std::string getSurname() const { return surname; }
     std::string getAddress() const { return address; }
     double getBalance() const { return balance; }
-
+void receiveMoney(double amount){
+    this->balance += amount;
+}
  void addMoney(double amount) {
     if (amount > 0) {
        this->balance += amount;
-        std::cout << "Added " << amount << " to your balance. Your new balance is: " << balance << std::endl;
+        std::cout << "Added " << amount << " to your balance. Your new balance is: "<<std::setprecision(2) <<std::fixed << balance<<"$"<<std::endl;
     } else {
         std::cout << "Amount must be positive." << std::endl;
     }
-    std::cout << "Balance after adding (inside addMoney method): " << balance << std::endl; // Debugging output
 }
 
+void sendMoney(double amount){
+    this->balance -= amount;
+       std::cout << "Send " <<  amount << " to your balance. Your new balance is: "<<std::setprecision(2) <<std::fixed << balance<<"$"<<std::endl;
+}
     void withdrawMoney(double amount) {
         if (amount > 0 && amount <= balance) {
            this-> balance -= amount;
-            std::cout << "Withdrawn " << amount << " from your balance. Your new balance is: " << balance << std::endl;
+            std::cout << "Withdrawn " <<  amount << " to your balance. Your new balance is: "<<std::setprecision(2) <<std::fixed << balance<<"$"<<std::endl;
         } else {
             std::cout << "Insufficient balance or invalid amount." << std::endl;
         }
@@ -74,6 +79,7 @@ public:
 };
 
 std::vector<std::pair<std::string, BankAccount>> customers;
+ 
 
 void serializeCustomer(const std::string& username, const std::string& password,
                        const std::string& name, const std::string& surname,
@@ -98,11 +104,11 @@ void updateCustomerFile() {
             file << cust.first << ',' << cust.second.getPassword() << ',' << customer.getName() << ',' << customer.getSurname() << ',' << customer.getAddress() << ',' << customer.getBalance() << std::endl;
         }
         file.close();
-        std::cout << "Customer file updated successfully." << std::endl;
     } else {
         std::cerr << "Error: Unable to open file for writing." << std::endl;
     }
 }
+
 void deserializeCustomers() {
     std::ifstream file(CUSTOMER_FILE);
     if (file.is_open()) {
@@ -159,7 +165,28 @@ bool isValidAddress(const std::string& address) {
 }
 
 bool isValidPassword(const std::string password) {
-    return password.length() >= 3 && password.length() <= 14;
+    bool correctPasswordLength = false;
+    bool containsSpecialSymbol=false;
+    bool containsNumber=false;
+    std::vector<char> specialSymbols= {'!','@','~','#','$','&','*'};
+    std::vector<char> numbers= {'0','1','2','3','4','5','6','7','8','9'};
+    for(int i = 0; i < password.length();i++){
+        if (std::find(specialSymbols.begin(), specialSymbols.end(), password[i]) != specialSymbols.end())
+        containsSpecialSymbol = true; break;
+    }
+    for(int i = 0; i < password.length();i++){
+        if (std::find(numbers.begin(), numbers.end(), password[i]) != numbers.end())
+        containsNumber = true; break;
+    }
+    if(password.length()>7){
+        correctPasswordLength = true;
+    }
+    if(!containsSpecialSymbol)std::cout<<"Password must contain at least one of this special characters : '!','@','~','#','$','&','*'"<<std::endl;
+    if(!correctPasswordLength)std::cout<<"Password must contain at least 7 characters long "<<std::endl;
+    if(!containsNumber)std::cout<<"Password must contain a number "<<std::endl;
+if(containsNumber && containsSpecialSymbol && correctPasswordLength)
+    return true;
+    else return false;
 }
 
 double getValidInitialBalance() {
@@ -231,11 +258,14 @@ int main() {
             std::cout << "Username must be between 3 and 14 characters. Enter your username again: ";
             std::cin >> username;
         }
+        while(!usernameFound(username)) {
+            std::cout << "Username already exists. Enter another username: ";
+            std::cin >> username;
+        }
 
         std::cout << "Enter your password: ";
         std::cin >> password;
         while (!isValidPassword(password)) {
-            std::cout << "Password must be between 3 and 14 characters. Enter your password again: ";
             std::cin >> password;
         }
 
@@ -277,6 +307,7 @@ int main() {
 
     case 3: {
         std::cout << "Thank you for using the bank!" << std::endl;
+        action=EXIT_OPTION;
         break;
     }
     }
@@ -287,16 +318,19 @@ int main() {
         std::cout << "1. Add money to your account" << std::endl;
         std::cout << "2. Withdraw money from your account" << std::endl;
         std::cout << "3. Check Your Balance" << std::endl;
-        std::cout << "4. Exit" << std::endl;
+        std::cout << "4. Transfer money between accounts" << std::endl;
+        std::cout << "5. Exit" << std::endl;
+        std::cout << "Enter your action: ";
         std::cin >> action;
 
-        while (std::cin.fail() || action < 1 || action > 4) {
-            std::cout << "Invalid input. Please enter a number between 1 and 4: ";
+        while (std::cin.fail() || action < 1 || action > 5) {
+            std::cout << "Invalid input. Please enter a number between 1 and 5: ";
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cin >> action;
         }
-
+            std::string usernameToSend="";
+            double amountToSend=0;
         switch (action) {
 case 1: {
     double amount;
@@ -310,7 +344,6 @@ case 1: {
     }
     for (int i=0;i<customers.size();i++) {
         if (customers[i].first == username) {
-            std::cout << "Customer found: " << customers[i].first << std::endl; 
             customers[i].second.getCustomerRef().addMoney(amount);
              updateCustomerFile();
             break;
@@ -348,13 +381,55 @@ case 2: {
             
             break;
         case 4:
-            std::cout << "Thank you for using the bank!" << std::endl;
+            
+            std::cout << "Enter the username of the account you would like to transfer to: ";
+            std::cin >> usernameToSend;
+            while(usernameToSend==username) {
+                std::cout << "You cannot transfer to yourself" << std::endl;
+                std::cout << "Enter the username of the account you would like to transfer to: ";
+                std::cin >> usernameToSend;
+            }
+            while(!usernameFound(usernameToSend)){
+                std::cout << "Account not found. Please enter the username of the account you would like to transfer to: ";
+                std::cin >> usernameToSend;
+            }
+            std::cout << "Enter amount to transfer: ";
+            std::cin >> amountToSend;
+            while (std::cin.fail() || amountToSend <= 0) {
+        std::cout << "Invalid amount. Please enter a positive number: ";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cin >> amountToSend;
+    }
+              for (auto& cust : customers) {
+        if (cust.first == username) {
+            if (amountToSend > 0 && amountToSend <= cust.second.getCustomerRef().getBalance()) {
+           cust.second.getCustomerRef().sendMoney(amountToSend);
+         for(auto& users: customers){
+            if(users.first==usernameToSend){
+                users.second.getCustomerRef().receiveMoney(amountToSend);
+                break;
+            }
+         }
+        } else {
+            std::cout << "Insufficient balance or invalid amount." << std::endl;
+        }
+            updateCustomerFile();
+            break;
+        }
+    }
+    break;
+            case 5:
+            
+            break;
+                   std::cout << "Thank you for using the bank!" << std::endl;
             action = EXIT_OPTION;
             break;
         default:
-            std::cout << "Invalid option. Please enter a number between 1 and 4." << std::endl;
+            std::cout << "Invalid option. Please enter a number between 1 and 5." << std::endl;
             break;
         }
+       
     }
 
     return 0;

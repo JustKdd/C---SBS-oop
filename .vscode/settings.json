@@ -55,6 +55,8 @@
         "unordered_map": "cpp",
         "vector": "cpp",
         "xhash": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "algorithm": "cpp",
+        "optional": "cpp"
     }
 }
