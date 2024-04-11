@@ -171,14 +171,14 @@ bool isValidPassword(const std::string password) {
     std::vector<char> specialSymbols= {'!','@','~','#','$','&','*'};
     std::vector<char> numbers= {'0','1','2','3','4','5','6','7','8','9'};
     for(int i = 0; i < password.length();i++){
-        if (std::find(specialSymbols.begin(), specialSymbols.end(), password[i]) != specialSymbols.end())
-        containsSpecialSymbol = true; break;
+        if (std::find(specialSymbols.begin(), specialSymbols.end(), password[i]) != specialSymbols.end()){
+        containsSpecialSymbol = true; break;}
     }
     for(int i = 0; i < password.length();i++){
-        if (std::find(numbers.begin(), numbers.end(), password[i]) != numbers.end())
-        containsNumber = true; break;
+        if (std::find(numbers.begin(), numbers.end(), password[i]) != numbers.end()){
+        containsNumber = true; break;}
     }
-    if(password.length()>7){
+    if(password.length()>=7){
         correctPasswordLength = true;
     }
     if(!containsSpecialSymbol)std::cout<<"Password must contain at least one of this special characters : '!','@','~','#','$','&','*'"<<std::endl;
@@ -258,7 +258,7 @@ int main() {
             std::cout << "Username must be between 3 and 14 characters. Enter your username again: ";
             std::cin >> username;
         }
-        while(!usernameFound(username)) {
+        while(usernameFound(username)) {
             std::cout << "Username already exists. Enter another username: ";
             std::cin >> username;
         }
@@ -266,6 +266,7 @@ int main() {
         std::cout << "Enter your password: ";
         std::cin >> password;
         while (!isValidPassword(password)) {
+             std::cout << "Enter your password: ";
             std::cin >> password;
         }
 
